@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L_EJER5</title>
+  
+  <script type="text/javascript" src="Paises.js"></script>
+  <script type="text/javascript" src="Departamentos.js"></script>
+  <script type="text/javascript" src="Ciudades.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+    integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+    crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+    integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+    crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster.js"></script>1
+  <link rel="stylesheet" href="Leaflet-MiniMap-master/src/Control.MiniMap.css" />
+  <script src="Leaflet-MiniMap-master/src/Control.MiniMap.js" type="text/javascript"></script>
+
+  <style>
+    *{ 
+      border: 0;
+    }
+    body {
+      margin: 0px;
+      padding: 0%;
+    }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+
+
+  <div id="map">
+    <script>
+      var markers = L.markerClusterGroup();
+
+      var OSM = new L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>' +
+            "contributors",
+          maxZoom: 19,
+        }
+      );
+
+      var OSMMIN = new L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>' +
+            "contributors",
+          minZoom: 0,
+          maxZoom: 13,
+        }
+      );
+
+      function getColorPaises(pais) {
+        return pais > 100000000
+          ? "blue"
+          : pais > 50000000
+            ? "red"
+            : pais > 20000000
+              ? "green"
+              : pais > 10000000
+                ? "yellow"
+                : pais > 5000000
+                  ? "orange"
+                  : pais > 2000000
+                    
+      }
+
+      function getColorDepartamento(depar) {
+        return depar > 1000000000000
+          ? "red"
+          : depar > 71289257358
+            ? "blue"
+            : depar > 59575066797
+              ? "green"
+              : depar > 31468838933
+                ? "orange"
+                : "yellow";
+      }
+
+      function getColorCiudades(ciud) {
+        return ciud == "S" ? "red" : ciud == "N" ? "blue" : "#FFFFFF";
+      }
+
+      function estilopaises(feature) {
+        return {
+          fillColor: getColorPaises(feature.properties.pop_est),
+          weight: 2,
+          opacity: 1,
+          color: "black",
+          dashArray: "1",
+          fillOpacity: 0.7,
+        };
+      }
+
+      function popuPaises(feature, layer) {
+        if (feature.properties && feature.properties.name) {
+          layer.bindPopup(feature.properties.name);
+        }
+      }
+
+      function estiloDepartamento(feature) {
+        return {
+          fillColor: getColorDepartamento(feature.properties.SHAPE_AREA),
+          weight: 2,
+          opacity: 1,
+          color: "black",
+          dashArray: "1",
+          fillOpacity: 0.4,
+        };
+      }
+
+      function popupDepartamento(feature, layer) {
+        if (feature.properties && feature.properties.NOM_DEPART) {
+          layer.bindPopup(feature.properties.NOM_DEPART);
+        }
+      }
+
+      var map = L.map("map", {
+        center: [1.6181058937930153, -75.6095327486994],
+        layers: [OSM],
+        zoom: 4,
+        scrollWheelZoom: true,
+      });
+
+      var PaisesMun = L.geoJson(paises, {
+        style: estilopaises,
+        onEachFeature: popuPaises,
+      }).addTo(map);
+
+      var DepartamentosCol = L.geoJson(departamentos, {
+        style: estiloDepartamento,
+        onEachFeature: popupDepartamento,
+      }).addTo(map);
+
+      var CiudadesMun = L.geoJSON(ciudades, {
+        pointToLayer: function (feature, latlng) {
+          return markers.addLayer(
+            L.circleMarker(latlng, {
+              radius: 8,
+              fillColor: getColorCiudades(feature.properties.CAPITAL),
+              weight: 1,
+              opacity: 0,
+              color: "black",
+              fillOpacity: 1,
+            }).bindPopup(
+              "Pais: " +
+              feature.properties.PAIS +
+              "<br>" +
+              "NOMBRE: " +
+              feature.properties.CIUDAD +
+              "<br>" +
+              "Capital: " +
+              feature.properties.CAPITAL
+            )
+          );
+        },
+      }).addTo(map);
+
+      map.addLayer(markers);
+
+      var miniMap = new L.Control.MiniMap(OSMMIN, {
+        toggleDisplay: true,
+      }).addTo(map);
+
+      var baseMaps = {
+        OpenStreetMap: OSM,
+      };
+
+      var overlayMaps = {
+        "<img src = 'https://cdn-icons-png.flaticon.com/512/4830/4830735.png' height=15px, width=15px/> Paises":
+          PaisesMun,
+        "<img src = 'https://cdn-icons-png.flaticon.com/512/3938/3938941.png' height=15px, width=15px/> Departamento":
+          DepartamentosCol,
+        "<img src='https://cdn-icons-png.flaticon.com/512/1721/1721763.png' height=15px, width=15px/> Ciudades":
+          CiudadesMun,
+      };
+
+      L.control.scale({ position: "topright", imperial: false }).addTo(map);
+      L.control
+        .layers(baseMaps, overlayMaps, { collapsed: false })
+        .addTo(map);
+    </script>
+  </div>
+</body>
+
+</html>
